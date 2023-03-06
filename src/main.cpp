@@ -218,7 +218,6 @@ void PRINTER_S (void *pvParameters) {  //serial print buat semua sensor dkk (tel
   Serial.println(tele);
   Serial2.print(tele);
   packetCount++;
-//  Serial.println(gForce);
   }
   vTaskDelay( 995 / portTICK_PERIOD_MS );
   }
