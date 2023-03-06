@@ -161,11 +161,6 @@
 //   return gForce;
 // }
 
-// int Mpumine::error_cek() {
-//   Wire1.beginTransmission(0x68);  //buat baca mpu nyambung atau tidak pakai address mpu 0x68
-//   return Wire1.endTransmission();
-// }
-
 // float Mpumine::read_roll() {
 //   roll = atan2(x, y) * RAD_TO_DEG;
 //   float gyroRoll = roll + gyro_x * 0.01;
@@ -209,6 +204,11 @@ void Mpumine::begin() {
   Wire1.begin();
   mpu.begin();
   mpu.calcOffsets(true,true);
+}
+
+int Mpumine::error_cek() {
+  Wire1.beginTransmission(0x68);  //buat baca mpu nyambung atau tidak pakai address mpu 0x68
+  return Wire1.endTransmission();
 }
 
 float Mpumine::readacc_x() {

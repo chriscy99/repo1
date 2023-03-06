@@ -137,7 +137,16 @@ class telemetry {
     tele_sim = true;sim_press = content.toFloat();;cmdEcho = content;
     }
     }
-    void distort (float a,float t,float p,float x,float y,float v, int j, int m, int d, float lat, float lng, float gps_alti, int satelite) {
+    void distort (float a,float t,float p,float x,float y,float v, int j, int m, int d, float lat, float lng, float gps_alti, int satelite, int errMPU, bool errBMP) {
+    if(errMPU!=0){
+        x = 12345;
+        y = 12345;
+    }
+    if(errBMP==true){
+        a = 12345;
+        t = 12345;
+        p = 12345;
+    }
     memset(str_altitude, 0, sizeof(str_altitude));
     memset(str_temperature, 0, sizeof(str_temperature));
     memset(str_pressure, 0, sizeof(str_pressure));

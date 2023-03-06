@@ -27,7 +27,7 @@ void EPROM_SD(void *pvParameters );
 void SIMULATOR(void *pvParameters );
 
 extern unsigned long packetCount; extern bool tele_command, tele_calibration, tele_enable, tele_sim;extern float sim_press;
-float accelX,accelY,gForce,l_gforce,accelZ,value_roll,value_pitch,c,temp=0,press,altit,last_altit=0,ref,lat,lng,eprom,voltase=5.0,gps_altitude;    //MPU, BME, GPS, EEPROM
+float accelX,accelY,gForce,l_gforce,accelZ,value_roll,value_pitch,c,temp=0,press,altit,last_altit=0,ref,lat,lng,eprom,voltase=5.0,gps_altitude;int errorMPU;bool errorBMP;    //MPU, BME, GPS, EEPROM
 int packet[3] = {0,0,0},time[7],gps_satelite,paket_xbee=0,error; bool var_sim;    //GPS
 int no=0,i,sensor_counter=0; int n ; String ayaya[100]; int k=0,state; String hasil, tele; char tampung; bool lock=false;    //PARSING
 
@@ -103,8 +103,10 @@ void SENSOR_S (void *pvParameters) {
 
   /*BMP READ*/
   if (isnan(bmed.read_altitude(ref))) {      //detect bme nyambung atau ga
+  errorBMP = true;
   bmed.begin();vTaskDelay( 1 / portTICK_PERIOD_MS );  //kalo ga nyambung coba .begin biar jalan lagi
   }else {  // kalo nyambung baca datanya
+  errorBMP = false;
   temp = bmed.read_temp();
   press = bmed.read_press();
   if (tele_calibration==true) {
@@ -125,7 +127,7 @@ void SENSOR_S (void *pvParameters) {
   }
   /*BMP READ END*/
 
-//  error = mpu.error_cek();
+errorMPU = mpu.error_cek();
 
 /*MPU READ*/
   mpu.update_sens();
@@ -179,8 +181,7 @@ void SIMULATOR(void *pvParameters) {
   (void) pvParameters;
   while (1) {
   /* Telemetry Format */
-  telemetry().distort(altit,temp,press,value_pitch,value_roll,voltase,time[3],time[4],time[5],lat,lng,gps_altitude,gps_satelite);
-  tele = telemetry().constructMessage();
+  telemetry().distort(altit,temp,press,value_pitch,value_roll,voltase,time[3],time[4],time[5],lat,lng,gps_altitude,gps_satelite,errorMPU,errorBMP);
   tele.replace(" ", "");
   /* Parsing Command */
   hasil = "";
@@ -197,11 +198,11 @@ void SIMULATOR(void *pvParameters) {
 void EPROM_SD (void *pvParameters) {   //*buat EEPROM butuh cara untuk avoid overwrite eeprom
   (void) pvParameters;
   SD.begin(CS); //init SD card sesuai pin CS
-  myFile = SD.open("1088.csv", FILE_WRITE);
+  myFile = SD.open("1084.csv", FILE_WRITE);
   myFile.println("TeamID,Date,Count,Mode,State,Altitude,HS,PC,MAST,Temperature,Pressure,Voltage,DateGPS,AltiGPS,LAT,LNG,Satelite,TILTX,TILTY,ECHO");
   myFile.close();
   while(1) {
-  myFile = SD.open("1088.csv", FILE_WRITE);  //open notepad buat isi data
+  myFile = SD.open("1084.csv", FILE_WRITE);  //open notepad buat isi data
   if (myFile) {
     myFile.print(tele);
     myFile.close();   //close notepad
