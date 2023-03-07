@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include "component.h"
 extern float accelX,accelY,temp,press,altit,lat,lng;
+String str_error = "";
 float sim_press;
 enum State {
     STANDBY     =  0,
@@ -138,26 +139,31 @@ class telemetry {
     }
     }
     void distort (float a,float t,float p,float x,float y,float v, int j, int m, int d, float lat, float lng, float gps_alti, int satelite, int errMPU, bool errBMP) {
-    if(errMPU!=0){
-        x = 12345;
-        y = 12345;
-    }
-    if(errBMP==true){
-        a = 12345;
-        t = 12345;
-        p = 12345;
-    }
+    
     memset(str_altitude, 0, sizeof(str_altitude));
     memset(str_temperature, 0, sizeof(str_temperature));
     memset(str_pressure, 0, sizeof(str_pressure));
     memset(str_x, 0, sizeof(str_x));
     memset(str_y, 0, sizeof(str_y));
     memset(str_voltage, 0, sizeof(str_voltage));
-    dtostrf(a, -4, 1, str_altitude);
-    dtostrf(t, 3, 1, str_temperature);
-    dtostrf(p, 6, 1, str_pressure);
-    dtostrf(x, 4, 2, str_x);
-    dtostrf(y, 4, 2, str_y);
+    if(errMPU!=0){
+        strncpy(str_x, "", sizeof(str_x));
+        strncpy(str_y, "", sizeof(str_y));
+    }
+    else{
+        dtostrf(x, 4, 2, str_x);
+        dtostrf(y, 4, 2, str_y);
+    }
+    if(errBMP==true){
+        strncpy(str_altitude, "", sizeof(str_altitude));
+        strncpy(str_temperature, "", sizeof(str_temperature));
+        strncpy(str_pressure, "", sizeof(str_pressure));
+    }
+    else{
+        dtostrf(a, -4, 1, str_altitude);
+        dtostrf(t, 3, 1, str_temperature);
+        dtostrf(p, 6, 1, str_pressure);
+    }
     dtostrf(v, 3, 2, str_voltage);
     dtostrf(lat, 3, 6, str_lat);
     dtostrf(lng, 3, 6, str_lng);

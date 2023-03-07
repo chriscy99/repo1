@@ -26,6 +26,7 @@ void PRINTER_S(void *pvParameters );
 void EPROM_SD(void *pvParameters );
 void SIMULATOR(void *pvParameters );
 
+unsigned long previousTime = 0;const long interval = 1000;unsigned long currentTime;
 extern unsigned long packetCount; extern bool tele_command, tele_calibration, tele_enable, tele_sim;extern float sim_press;
 float accelX,accelY,gForce,l_gforce,accelZ,value_roll,value_pitch,c,temp=0,press,altit,last_altit=0,ref,lat,lng,eprom,voltase=5.0,gps_altitude;int errorMPU;bool errorBMP;    //MPU, BME, GPS, EEPROM
 int packet[3] = {0,0,0},time[7],gps_satelite,paket_xbee=0,error; bool var_sim;    //GPS
@@ -102,7 +103,7 @@ void SENSOR_S (void *pvParameters) {
   /*GPS READ END*/
 
   /*BMP READ*/
-  if (isnan(bmed.read_altitude(ref))) {      //detect bme nyambung atau ga
+  if (isnan(bmed.read_press())) {      //detect bme nyambung atau ga
   errorBMP = true;
   bmed.begin();vTaskDelay( 1 / portTICK_PERIOD_MS );  //kalo ga nyambung coba .begin biar jalan lagi
   }else {  // kalo nyambung baca datanya
@@ -111,7 +112,8 @@ void SENSOR_S (void *pvParameters) {
   press = bmed.read_press();
   if (tele_calibration==true) {
     ref = bmed.read_press();
-    bmed.tele_calibration(ref);tele_calibration=false;
+    bmed.tele_calibration(ref);
+    tele_calibration=false;
   }
   if (tele_sim==true) {
  //   if (altit>0) {
@@ -182,6 +184,7 @@ void SIMULATOR(void *pvParameters) {
   while (1) {
   /* Telemetry Format */
   telemetry().distort(altit,temp,press,value_pitch,value_roll,voltase,time[3],time[4],time[5],lat,lng,gps_altitude,gps_satelite,errorMPU,errorBMP);
+  tele = telemetry().constructMessage();
   tele.replace(" ", "");
   /* Parsing Command */
   hasil = "";
@@ -214,13 +217,19 @@ void EPROM_SD (void *pvParameters) {   //*buat EEPROM butuh cara untuk avoid ove
 void PRINTER_S (void *pvParameters) {  //serial print buat semua sensor dkk (telemetrinya)
   (void) pvParameters;
   while (1) {
-  if (tele=="") {;}
-  else {
-  Serial.println(tele);
-  Serial2.print(tele);
-  packetCount++;
+  currentTime = millis();
+  if (currentTime - previousTime >= interval) {
+    previousTime = currentTime;
+    if (tele=="") {Serial.println("asu");}
+    else {
+    Serial.println(tele);
+    if (tele_command==true) {
+      Serial2.print(tele);
+    }
+    packetCount++;
+    }
   }
-  vTaskDelay( 995 / portTICK_PERIOD_MS );
+  vTaskDelay( 1 / portTICK_PERIOD_MS );
   }
 }
 
