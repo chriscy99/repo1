@@ -59,6 +59,10 @@ class bmp_read {
       }
       Serial.print("Done flush, please comment the function");
     };
+    int error_check() {
+      Wire.beginTransmission(0x77);  //buat baca mpu nyambung atau tidak pakai address mpu 0x68
+      return Wire.endTransmission();
+    };
 };
 
 #endif

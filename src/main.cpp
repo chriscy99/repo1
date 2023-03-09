@@ -38,7 +38,6 @@ void setup() {
   Serial3.begin(9600);
   Serial2.begin(115200);
   mpu.begin();   
-  delay(1000);
   bmed.begin();
   temp = bmp.temperature;
   /*Dummy Data*/
@@ -103,13 +102,18 @@ void SENSOR_S (void *pvParameters) {
   /*GPS READ END*/
 
   /*BMP READ*/
-  if (isnan(bmed.read_press())) {      //detect bme nyambung atau ga
+  /*if (isnan(bmed.read_press())) {      //detect bme nyambung atau ga
   errorBMP = true;
   bmed.begin();vTaskDelay( 1 / portTICK_PERIOD_MS );  //kalo ga nyambung coba .begin biar jalan lagi
   }else {  // kalo nyambung baca datanya
-  errorBMP = false;
+  errorBMP = false;*/
+  errorBMP = bmed.error_check();
+  if (errorBMP!=0) {
+    bmed.begin();
+  }
   temp = bmed.read_temp();
   press = bmed.read_press();
+  
   if (tele_calibration==true) {
     ref = bmed.read_press();
     bmed.tele_calibration(ref);
@@ -126,23 +130,24 @@ void SENSOR_S (void *pvParameters) {
     altit = bmed.read_altitude(ref);
  //   } else {altit = 0;}
   }
-  }
+  
   /*BMP READ END*/
 
 errorMPU = mpu.error_cek();
 
 /*MPU READ*/
+  if (errorMPU!=0||(mpu.readacc_x()&&mpu.readacc_y()&&mpu.readacc_z())==0) { //kalau tidak nyambung nilai error !=0 sama nilai xyz == 0
+    mpu.begin();//coba .begin biar jalan lagi
+  }
   mpu.update_sens();
-  if (error!=0||(mpu.readacc_x()&&mpu.readacc_y()&&mpu.readacc_z())==0) { //kalau tidak nyambung nilai error !=0 sama nilai xyz == 0
-    mpu.begin();vTaskDelay( 10 / portTICK_PERIOD_MS ) ;//coba .begin biar jalan lagi
-  }else { //kalau jalan baca data
+  
   accelX = mpu.readacc_x();
   accelY = mpu.readacc_y();
   accelZ = mpu.readacc_z();
   value_roll = mpu.read_tiltx();
   value_pitch = mpu.read_tilty();
   gForce = (mpu.readGforce()+l_gforce)/2;
-  }
+  
   /*MPU READ END*/
 
   /*DETECTION*/
@@ -218,16 +223,17 @@ void PRINTER_S (void *pvParameters) {  //serial print buat semua sensor dkk (tel
   (void) pvParameters;
   while (1) {
   currentTime = millis();
+  mpu.update_sens();
   if (currentTime - previousTime >= interval) {
-    previousTime = currentTime;
-    if (tele=="") {Serial.println("asu");}
-    else {
+    previousTime = currentTime;  mpu.update_sens();
     Serial.println(tele);
-    if (tele_command==true) {
+    Serial.println(errorBMP);
+    Serial.println(errorMPU);
+    if (tele_command==true) {  mpu.update_sens();
       Serial2.print(tele);
     }
     packetCount++;
-    }
+    mpu.update_sens();
   }
   vTaskDelay( 1 / portTICK_PERIOD_MS );
   }
